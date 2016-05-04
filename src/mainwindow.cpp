@@ -11,6 +11,7 @@
 #include <QTextDocumentFragment>
 #include <QDebug>
 #include <QDir>
+#include <QRegularExpression>
 
 IrcClient read;
 IrcClient write;
@@ -176,6 +177,22 @@ MainWindow::onMessage(IrcPrivateMessage *message)
 
             offset += replacement.tag.length() - replacement.length;
         }
+    }
+
+    QString url_regex_raw = "((?:https?|ftp)://\\S+)";
+    QRegularExpression url_regex(url_regex_raw, QRegularExpression::CaseInsensitiveOption);
+
+    int offset = 0;
+    while (1){
+        QRegularExpressionMatch match = url_regex.match(html_content, offset);
+        if (!match.hasMatch()) {
+            break;
+        }
+
+        QString url = match.captured(1);
+        QString new_url = "<a href=\"" + url + "\">" + url + "</a>";
+        html_content.replace(match.capturedStart(1), match.capturedLength(1), new_url);
+        offset = match.capturedStart() + new_url.length();
     }
 
     channelChat->insertHtml(html_content);
